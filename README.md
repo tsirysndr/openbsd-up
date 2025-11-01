@@ -72,6 +72,16 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 | `--drive`       | `-d`  | Path to persistent disk image  | None           |
 | `--disk-format` |       | Disk format (qcow2, raw, etc.) | `raw`          |
 
+## 🖥️ Console Setup
+
+When OpenBSD boots, you'll see the boot loader prompt, enter the following
+command:
+
+```
+set tty com0
+boot
+```
+
 ## 🔌 Networking
 
 The VM is automatically configured with:
