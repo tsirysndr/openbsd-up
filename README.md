@@ -3,6 +3,8 @@
 A simple CLI tool to spin up OpenBSD virtual machines using QEMU with minimal
 fuss.
 
+![Preview](./preview.png)
+
 ## ✨ Features
 
 - 🚀 **Quick Start**: Launch OpenBSD VMs with a single command
