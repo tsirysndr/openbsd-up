@@ -3,7 +3,7 @@ import chalk from "chalk";
 import _ from "lodash";
 import Moniker from "moniker";
 import { generateRandomMacAddress } from "./network.ts";
-import { saveInstanceState } from "./state.ts";
+import { saveInstanceState, updateInstanceState } from "./state.ts";
 
 const DEFAULT_VERSION = "7.8";
 
@@ -133,9 +133,10 @@ export async function runQemu(
   })
     .spawn();
 
+  const name = Moniker.choose();
   await saveInstanceState({
     id: createId(),
-    name: Moniker.choose(),
+    name,
     bridge: options.bridge,
     macAddress,
     memory: options.memory,
@@ -151,6 +152,8 @@ export async function runQemu(
   });
 
   const status = await cmd.status;
+
+  await updateInstanceState(name, "STOPPED",);
 
   if (!status.success) {
     Deno.exit(status.code);

@@ -53,6 +53,8 @@ export default async function (name: string) {
 
   const status = await cmd.status;
 
+  await updateInstanceState(name, "STOPPED", cmd.pid);
+
   if (!status.success) {
     Deno.exit(status.code);
   }
