@@ -24,8 +24,9 @@
     "jsr:@std/text@~1.0.7": "1.0.16",
     "npm:@paralleldrive/cuid2@^3.0.4": "3.0.4",
     "npm:chalk@^5.6.2": "5.6.2",
+    "npm:dayjs@^1.11.19": "1.11.19",
+    "npm:kysely@0.27.6": "0.27.6",
     "npm:kysely@~0.27.2": "0.27.6",
-    "npm:kysely@~0.28.8": "0.28.8",
     "npm:lodash@^4.17.21": "4.17.21",
     "npm:moniker@~0.1.2": "0.1.2"
   },
@@ -137,14 +138,14 @@
     "chalk@5.6.2": {
       "integrity": "sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA=="
     },
+    "dayjs@1.11.19": {
+      "integrity": "sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw=="
+    },
     "error-causes@3.0.2": {
       "integrity": "sha512-i0B8zq1dHL6mM85FGoxaJnVtx6LD5nL2v0hlpGdntg5FOSyzQ46c9lmz5qx0xRS2+PWHGOHcYxGIBC5Le2dRMw=="
     },
     "kysely@0.27.6": {
       "integrity": "sha512-FIyV/64EkKhJmjgC0g2hygpBv5RNWVPyNCqSAD7eTCv6eFWNIi4PN1UvdSJGicN/o35bnevgis4Y0UDC0qi8jQ=="
-    },
-    "kysely@0.28.8": {
-      "integrity": "sha512-QUOgl5ZrS9IRuhq5FvOKFSsD/3+IA6MLE81/bOOTRA/YQpKDza2sFdN5g6JCB9BOpqMJDGefLCQ9F12hRS13TA=="
     },
     "lodash@4.17.21": {
       "integrity": "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg=="
@@ -162,7 +163,8 @@
       "jsr:@std/assert@1",
       "npm:@paralleldrive/cuid2@^3.0.4",
       "npm:chalk@^5.6.2",
-      "npm:kysely@~0.28.8",
+      "npm:dayjs@^1.11.19",
+      "npm:kysely@0.27.6",
       "npm:lodash@^4.17.21",
       "npm:moniker@~0.1.2"
     ]
