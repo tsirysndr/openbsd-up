@@ -191,10 +191,6 @@ openbsd-up 7.8 --drive my-server.qcow2 --disk-format qcow2 --size 40G
 openbsd-up start <vm-name>
 ```
 
-## 📄 License
-
-See [LICENSE](LICENSE) file for details. Licensed under Mozilla Public License v2.0.
-
 ## 🔧 Architecture
 
 Built with modern TypeScript and Deno, featuring:
@@ -205,6 +201,11 @@ Built with modern TypeScript and Deno, featuring:
 - **Dependencies**: Minimal runtime dependencies, leveraging Deno's built-in capabilities
 - **Unique IDs**: CUID2 for collision-resistant VM identifiers
 - **Human Names**: Moniker for memorable VM names
+
+
+## 📄 License
+
+See [LICENSE](LICENSE) file for details. Licensed under Mozilla Public License v2.0.
 
 ## 🤝 Contributing
 
