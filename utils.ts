@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import _ from "lodash";
+import { generateRandomMacAddress } from "./network.ts";
 
 const DEFAULT_VERSION = "7.8";
 
@@ -107,7 +108,7 @@ export async function runQemu(
         ? `bridge,id=net0,br=${options.bridge}`
         : "user,id=net0,hostfwd=tcp::2222-:22",
       "-device",
-      "e1000,netdev=net0",
+      `e1000,netdev=net0,mac=${generateRandomMacAddress()}`,
       "-nographic",
       "-monitor",
       "none",
