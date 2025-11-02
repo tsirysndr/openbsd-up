@@ -16,9 +16,37 @@ interface Options {
   size: string;
 }
 
-async function downloadIso(url: string, options: Options): Promise<string> {
+async function du(path: string): Promise<number> {
+  const cmd = new Deno.Command("du", {
+    args: [path],
+    stdout: "piped",
+    stderr: "inherit",
+  });
+
+  const { stdout } = await cmd.spawn().output();
+  const output = new TextDecoder().decode(stdout).trim();
+  const size = parseInt(output.split("\t")[0], 10);
+  return size;
+}
+
+async function downloadIso(
+  url: string,
+  options: Options,
+): Promise<string | null> {
   const filename = url.split("/").pop()!;
   const outputPath = options.output ?? filename;
+
+  if (options.drive && await Deno.stat(options.drive).catch(() => false)) {
+    const driveSize = await du(options.drive);
+    if (driveSize > 10) {
+      console.log(
+        chalk.yellowBright(
+          `Drive image ${options.drive} is not empty (size: ${driveSize} KB), skipping ISO download to avoid overwriting existing data.`,
+        ),
+      );
+      return null;
+    }
+  }
 
   if (await Deno.stat(outputPath).catch(() => false)) {
     console.log(
@@ -53,7 +81,7 @@ function constructDownloadUrl(version: string): string {
 }
 
 async function runQemu(
-  isoPath: string | undefined,
+  isoPath: string | null,
   options: Options,
 ): Promise<void> {
   const cmd = new Deno.Command("qemu-system-x86_64", {
@@ -201,7 +229,7 @@ if (import.meta.main) {
     )
     .action(async (options: Options, input?: string) => {
       const resolvedInput = handleInput(input);
-      let isoPath: string | undefined = resolvedInput;
+      let isoPath: string | null = resolvedInput;
 
       if (
         resolvedInput.startsWith("https://") ||
@@ -215,7 +243,7 @@ if (import.meta.main) {
       }
 
       if (!input && options.drive) {
-        isoPath = undefined;
+        isoPath = null;
       }
 
       await runQemu(isoPath, {
