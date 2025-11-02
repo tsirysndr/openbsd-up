@@ -65,14 +65,15 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 
 ## 🎛️ Command Line Options
 
-| Option          | Short | Description                    | Default        |
-| --------------- | ----- | ------------------------------ | -------------- |
-| `--output`      | `-o`  | Output path for downloaded ISO | Auto-generated |
-| `--cpu`         | `-c`  | CPU type to emulate            | `host`         |
-| `--cpus`        | `-C`  | Number of CPU cores            | `2`            |
-| `--memory`      | `-m`  | RAM allocation                 | `2G`           |
-| `--drive`       | `-d`  | Path to persistent disk image  | None           |
-| `--disk-format` |       | Disk format (qcow2, raw, etc.) | `raw`          |
+| Option          | Short | Description                                                  | Default        |
+| --------------- | ----- | ------------------------------------------------------------ | -------------- |
+| `--output`      | `-o`  | Output path for downloaded ISO                               | Auto-generated |
+| `--cpu`         | `-c`  | CPU type to emulate                                          | `host`         |
+| `--cpus`        | `-C`  | Number of CPU cores                                          | `2`            |
+| `--memory`      | `-m`  | RAM allocation                                               | `2G`           |
+| `--drive`       | `-d`  | Path to persistent disk image                                | None           |
+| `--disk-format` |       | Disk format (qcow2, raw, etc.)                               | `raw`          |
+| `--bridge`      | `-b`  | Name of the network bridge to use for networking (e.g., br0) | None           |
 
 ## 🖥️ Console Setup
 
