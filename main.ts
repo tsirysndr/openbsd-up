@@ -2,6 +2,7 @@
 
 import { Command } from "@cliffy/command";
 import chalk from "chalk";
+import _ from "lodash";
 
 const DEFAULT_VERSION = "7.8";
 
@@ -15,9 +16,9 @@ interface Options {
   size: string;
 }
 
-async function downloadIso(url: string, outputPath?: string): Promise<string> {
+async function downloadIso(url: string, options: Options): Promise<string> {
   const filename = url.split("/").pop()!;
-  outputPath = outputPath ?? filename;
+  const outputPath = options.output ?? filename;
 
   if (await Deno.stat(outputPath).catch(() => false)) {
     console.log(
@@ -51,7 +52,10 @@ function constructDownloadUrl(version: string): string {
   }.iso`;
 }
 
-async function runQemu(isoPath: string, options: Options): Promise<void> {
+async function runQemu(
+  isoPath: string | undefined,
+  options: Options,
+): Promise<void> {
   const cmd = new Deno.Command("qemu-system-x86_64", {
     args: [
       "-enable-kvm",
@@ -61,8 +65,7 @@ async function runQemu(isoPath: string, options: Options): Promise<void> {
       options.memory,
       "-smp",
       options.cpus.toString(),
-      "-cdrom",
-      isoPath,
+      ..._.compact([isoPath && "-cdrom", isoPath]),
       "-netdev",
       "user,id=net0,hostfwd=tcp::2222-:22",
       "-device",
@@ -74,12 +77,12 @@ async function runQemu(isoPath: string, options: Options): Promise<void> {
       "stdio,id=con0,signal=off",
       "-serial",
       "chardev:con0",
-      ...(options.drive
-        ? [
+      ..._.compact(
+        options.drive && [
           "-drive",
           `file=${options.drive},format=${options.diskFormat},if=virtio`,
-        ]
-        : []),
+        ],
+      ),
     ],
     stdin: "inherit",
     stdout: "inherit",
@@ -198,17 +201,21 @@ if (import.meta.main) {
     )
     .action(async (options: Options, input?: string) => {
       const resolvedInput = handleInput(input);
-      let isoPath = resolvedInput;
+      let isoPath: string | undefined = resolvedInput;
 
       if (
         resolvedInput.startsWith("https://") ||
         resolvedInput.startsWith("http://")
       ) {
-        isoPath = await downloadIso(resolvedInput, options.output);
+        isoPath = await downloadIso(resolvedInput, options);
       }
 
       if (options.drive) {
         await createDriveImageIfNeeded(options);
+      }
+
+      if (!input && options.drive) {
+        isoPath = undefined;
       }
 
       await runQemu(isoPath, {
