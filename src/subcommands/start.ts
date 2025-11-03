@@ -20,7 +20,12 @@ export default async function (name: string) {
   const cmd = new Deno.Command(vm.bridge ? "sudo" : qemu, {
     args: [
       ..._.compact([vm.bridge && qemu]),
-      "-enable-kvm",
+      ..._.compact(
+        Deno.build.os === "darwin" ? ["-accel", "hvf"] : ["-enable-kvm"],
+      ),
+      ..._.compact(
+        Deno.build.arch === "aarch64" && ["-machine", "virt,highmem=on"],
+      ),
       "-cpu",
       vm.cpu,
       "-m",
