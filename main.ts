@@ -4,6 +4,7 @@ import { Command } from "@cliffy/command";
 import { createBridgeNetworkIfNeeded } from "./src/network.ts";
 import inspect from "./src/subcommands/inspect.ts";
 import ps from "./src/subcommands/ps.ts";
+import rm from "./src/subcommands/rm.ts";
 import start from "./src/subcommands/start.ts";
 import stop from "./src/subcommands/stop.ts";
 import {
@@ -88,6 +89,10 @@ if (import.meta.main) {
       "Inspect a VM",
       "openbsd-up inspect my-vm",
     )
+    .example(
+      "Remove a VM",
+      "openbsd-up rm my-vm",
+    )
     .action(async (options: Options, input?: string) => {
       const resolvedInput = handleInput(input);
       let isoPath: string | null = resolvedInput;
@@ -132,6 +137,11 @@ if (import.meta.main) {
     .arguments("<vm-name:string>")
     .action(async (_options: unknown, vmName: string) => {
       await inspect(vmName);
+    })
+    .command("rm", "Remove a virtual machine")
+    .arguments("<vm-name:string>")
+    .action(async (_options: unknown, vmName: string) => {
+      await rm(vmName);
     })
     .parse(Deno.args);
 }
