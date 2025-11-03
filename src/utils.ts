@@ -37,7 +37,7 @@ export async function emptyDiskImage(path: string): Promise<boolean> {
   }
 
   const size = await du(path);
-  return size < 10;
+  return size < 100;
 }
 
 export async function downloadIso(
@@ -86,9 +86,53 @@ export async function downloadIso(
 }
 
 function constructDownloadUrl(version: string): string {
-  return `https://cdn.openbsd.org/pub/OpenBSD/${version}/amd64/install${
+  let arch = "amd64";
+
+  if (Deno.build.arch === "aarch64") {
+    arch = "arm64";
+  }
+
+  return `https://cdn.openbsd.org/pub/OpenBSD/${version}/${arch}/install${
     version.replace(/\./g, "")
   }.iso`;
+}
+
+export async function setupFirmwareFilesIfNeeded(): Promise<string[]> {
+  if (Deno.build.arch !== "aarch64") {
+    return [];
+  }
+
+  const brewCmd = new Deno.Command("brew", {
+    args: ["--prefix", "qemu"],
+    stdout: "piped",
+    stderr: "inherit",
+  });
+  const { stdout, success } = await brewCmd.spawn().output();
+
+  if (!success) {
+    console.error(
+      chalk.redBright(
+        "Failed to get QEMU prefix from Homebrew. Ensure QEMU is installed via Homebrew.",
+      ),
+    );
+    Deno.exit(1);
+  }
+
+  const brewPrefix = new TextDecoder().decode(stdout).trim();
+  const edk2Aarch64 = `${brewPrefix}/share/qemu/edk2-aarch64-code.fd`;
+  const edk2VarsAarch64 = "./edk2-arm-vars.fd";
+
+  await Deno.copyFile(
+    `${brewPrefix}/share/qemu/edk2-arm-vars.fd`,
+    edk2VarsAarch64,
+  );
+
+  return [
+    "-drive",
+    `if=pflash,format=raw,file=${edk2Aarch64},readonly=on`,
+    "-drive",
+    `if=pflash,format=raw,file=${edk2VarsAarch64}`,
+  ];
 }
 
 export async function runQemu(
@@ -96,10 +140,20 @@ export async function runQemu(
   options: Options,
 ): Promise<void> {
   const macAddress = generateRandomMacAddress();
-  const cmd = new Deno.Command(options.bridge ? "sudo" : "qemu-system-x86_64", {
+
+  const qemu = Deno.build.arch === "aarch64"
+    ? "qemu-system-aarch64"
+    : "qemu-system-x86_64";
+
+  const cmd = new Deno.Command(options.bridge ? "sudo" : qemu, {
     args: [
-      ..._.compact([options.bridge && "qemu-system-x86_64"]),
-      "-enable-kvm",
+      ..._.compact([options.bridge && qemu]),
+      ..._.compact(
+        Deno.build.os === "darwin" ? ["-accel", "hvf"] : ["-enable-kvm"],
+      ),
+      ..._.compact(
+        Deno.build.arch === "aarch64" && ["-machine", "virt,highmem=on"],
+      ),
       "-cpu",
       options.cpu,
       "-m",
@@ -120,6 +174,7 @@ export async function runQemu(
       "stdio,id=con0,signal=off",
       "-serial",
       "chardev:con0",
+      ...await setupFirmwareFilesIfNeeded(),
       ..._.compact(
         options.drive && [
           "-drive",
@@ -153,7 +208,7 @@ export async function runQemu(
 
   const status = await cmd.status;
 
-  await updateInstanceState(name, "STOPPED",);
+  await updateInstanceState(name, "STOPPED");
 
   if (!status.success) {
     Deno.exit(status.code);

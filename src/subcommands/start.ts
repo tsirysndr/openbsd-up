@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { getInstanceState, updateInstanceState } from "../state.ts";
+import { setupFirmwareFilesIfNeeded } from "../utils.ts";
 
 export default async function (name: string) {
   const vm = await getInstanceState(name);
@@ -12,9 +13,13 @@ export default async function (name: string) {
 
   console.log(`Starting virtual machine ${vm.name} (ID: ${vm.id})...`);
 
-  const cmd = new Deno.Command(vm.bridge ? "sudo" : "qemu-system-x86_64", {
+  const qemu = Deno.build.arch === "aarch64"
+    ? "qemu-system-aarch64"
+    : "qemu-system-x86_64";
+
+  const cmd = new Deno.Command(vm.bridge ? "sudo" : qemu, {
     args: [
-      ..._.compact([vm.bridge && "qemu-system-x86_64"]),
+      ..._.compact([vm.bridge && qemu]),
       "-enable-kvm",
       "-cpu",
       vm.cpu,
@@ -36,6 +41,7 @@ export default async function (name: string) {
       "stdio,id=con0,signal=off",
       "-serial",
       "chardev:con0",
+      ...await setupFirmwareFilesIfNeeded(),
       ..._.compact(
         vm.drivePath && [
           "-drive",
