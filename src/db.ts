@@ -8,7 +8,7 @@ import {
   sql,
 } from "kysely";
 import { CONFIG_DIR } from "./constants.ts";
-import { STATUS } from "./types.ts";
+import type { STATUS } from "./types.ts";
 
 export const createDb = (location: string): Database => {
   Deno.mkdirSync(CONFIG_DIR, { recursive: true });
@@ -87,7 +87,7 @@ migrations["001"] = {
   },
 };
 
-export const migrateToLatest = async (db: Database) => {
+export const migrateToLatest = async (db: Database): Promise<void> => {
   const migrator = new Migrator({ db, provider: migrationProvider });
   const { error } = await migrator.migrateToLatest();
   if (error) throw error;

@@ -1,8 +1,8 @@
 # 🐡 openbsd-up
 
 A comprehensive CLI tool to manage OpenBSD virtual machines using QEMU with
-minimal fuss. Create, start, stop, and manage multiple OpenBSD VMs with persistent
-state tracking.
+minimal fuss. Create, start, stop, and manage multiple OpenBSD VMs with
+persistent state tracking.
 
 ![Preview](./preview.png)
 
@@ -15,13 +15,13 @@ state tracking.
 - 💾 **Flexible Storage**: Support for persistent disk images in multiple
   formats with auto-creation
 - ⚙️ **Configurable**: Customize CPU, memory, cores, and more
-- 🌐 **Network Ready**: Support for both NAT (SSH port forwarding) and
-  bridge networking
+- 🌐 **Network Ready**: Support for both NAT (SSH port forwarding) and bridge
+  networking
 - 📝 **Serial Console**: Direct terminal access via `-nographic` mode
 - 🗃️ **VM Management**: Persistent state tracking with SQLite database
 - 📋 **VM Lifecycle**: Start, stop, list, and inspect VMs with unique names
-- 🎯 **Smart Detection**: Automatically detects existing disk images to
-  avoid data loss
+- 🎯 **Smart Detection**: Automatically detects existing disk images to avoid
+  data loss
 - 🔗 **Bridge Support**: Automatic bridge network creation and QEMU
   configuration
 
@@ -35,7 +35,7 @@ state tracking.
 ## 📥 Installation
 
 ```bash
-deno install -A -g -r -f --config deno.json ./main.ts -n openbsd-up
+deno install -A -g -r -f jsr:@tsiry/openbsd-up
 ```
 
 ## 🎯 Usage
@@ -111,12 +111,12 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 
 ### Subcommands
 
-| Command         | Description                                    | Example                    |
-| --------------- | ---------------------------------------------- | -------------------------- |
-| `ps`            | List virtual machines                          | `openbsd-up ps --all`      |
-| `start <name>`  | Start a stopped VM by name or ID               | `openbsd-up start my-vm`   |
-| `stop <name>`   | Stop a running VM by name or ID                | `openbsd-up stop my-vm`    |
-| `inspect <name>`| Show detailed VM information and configuration | `openbsd-up inspect my-vm` |
+| Command          | Description                                    | Example                    |
+| ---------------- | ---------------------------------------------- | -------------------------- |
+| `ps`             | List virtual machines                          | `openbsd-up ps --all`      |
+| `start <name>`   | Start a stopped VM by name or ID               | `openbsd-up start my-vm`   |
+| `stop <name>`    | Stop a running VM by name or ID                | `openbsd-up stop my-vm`    |
+| `inspect <name>` | Show detailed VM information and configuration | `openbsd-up inspect my-vm` |
 
 ## 🖥️ Console Setup
 
@@ -133,11 +133,13 @@ boot
 The tool supports two networking modes:
 
 ### NAT Mode (Default)
+
 - **SSH Port Forward**: `localhost:2222` → VM port `22`
 - **Network Device**: Intel E1000 emulated NIC
 - No special privileges required
 
 ### Bridge Mode
+
 - **Direct Bridge Access**: VM gets IP from bridge network
 - **Network Device**: Intel E1000 emulated NIC with custom MAC
 - Requires `sudo` privileges for QEMU bridge access
@@ -160,12 +162,14 @@ ssh user@<vm-ip-address>
 `~/.openbsd-up/state.sqlite`. Each VM gets:
 
 - **Unique ID**: Auto-generated CUID for reliable identification
-- **Random Name**: Human-readable names (e.g., `ancient-butterfly`) for easy reference
+- **Random Name**: Human-readable names (e.g., `ancient-butterfly`) for easy
+  reference
 - **Persistent Config**: CPU, memory, disk, and network settings preserved
 - **Status Tracking**: RUNNING/STOPPED status with process ID tracking
 - **MAC Address**: Consistent network identity across restarts
 
 The state database allows you to:
+
 - Resume VMs exactly as configured
 - List all VMs with their current status
 - Start/stop VMs by name or ID
@@ -176,7 +180,8 @@ The state database allows you to:
 - 🐏 Allocate at least 2GB RAM for smooth installation
 - 💿 ISOs are cached - re-running with same version skips download
 - 📀 Disk images are auto-created if `--drive` path doesn't exist
-- 🔒 Tool detects non-empty disk images and skips ISO mounting to prevent data loss
+- 🔒 Tool detects non-empty disk images and skips ISO mounting to prevent data
+  loss
 - 🏷️ Use VM names for easy management: `openbsd-up start my-web-server`
 - 🌉 Bridge networking requires sudo but provides direct network access
 - 📊 Use `openbsd-up ps --all` to see both running and stopped VMs
@@ -195,17 +200,20 @@ openbsd-up start <vm-name>
 
 Built with modern TypeScript and Deno, featuring:
 
-- **CLI Framework**: [Cliffy](https://cliffy.io/) for robust command-line interface
-- **Database**: SQLite with [Kysely](https://kysely.dev/) query builder for type-safe operations
+- **CLI Framework**: [Cliffy](https://cliffy.io/) for robust command-line
+  interface
+- **Database**: SQLite with [Kysely](https://kysely.dev/) query builder for
+  type-safe operations
 - **State Management**: Persistent VM state tracking with migrations
-- **Dependencies**: Minimal runtime dependencies, leveraging Deno's built-in capabilities
+- **Dependencies**: Minimal runtime dependencies, leveraging Deno's built-in
+  capabilities
 - **Unique IDs**: CUID2 for collision-resistant VM identifiers
 - **Human Names**: Moniker for memorable VM names
 
-
 ## 📄 License
 
-See [LICENSE](LICENSE) file for details. Licensed under Mozilla Public License v2.0.
+See [LICENSE](LICENSE) file for details. Licensed under Mozilla Public License
+v2.0.
 
 ## 🤝 Contributing
 
