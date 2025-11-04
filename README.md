@@ -1,5 +1,10 @@
 # 🐡 openbsd-up
 
+[![release](https://github.com/tsirysndr/openbsd-up/actions/workflows/release.yml/badge.svg)](https://github.com/tsirysndr/openbsd-up/actions/workflows/release.yml)
+[![JSR](https://jsr.io/badges/@tsiry/openbsd-up)](https://jsr.io/@tsiry/openbsd-up)
+[![deno module](https://shield.deno.dev/x/openbsdup)](https://deno.land/x/openbsdup)
+![deno compatibility](https://shield.deno.dev/deno/^2.5.6)
+
 A comprehensive CLI tool to manage OpenBSD virtual machines using QEMU with
 minimal fuss. Create, start, stop, and manage multiple OpenBSD VMs with
 persistent state tracking.
