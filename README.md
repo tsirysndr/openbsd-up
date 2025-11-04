@@ -88,7 +88,7 @@ openbsd-up 7.8 \
   --cpus 4 \
   --memory 4G \
   --cpu host \
-  --drive disk.img \
+  --image disk.img \
   --disk-format qcow2 \
   --size 40G
 
@@ -109,7 +109,7 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 | `--cpu`         | `-c`  | CPU type to emulate                                          | `host`         |
 | `--cpus`        | `-C`  | Number of CPU cores                                          | `2`            |
 | `--memory`      | `-m`  | RAM allocation                                               | `2G`           |
-| `--drive`       | `-d`  | Path to persistent disk image                                | None           |
+| `--image`       | `-i`  | Path to persistent disk image                                | None           |
 | `--disk-format` |       | Disk format (qcow2, raw, etc.)                               | `raw`          |
 | `--size`        |       | Size of disk image to create if it doesn't exist             | `20G`          |
 | `--bridge`      | `-b`  | Name of the network bridge to use for networking (e.g., br0) | None           |
@@ -184,7 +184,7 @@ The state database allows you to:
 
 - 🐏 Allocate at least 2GB RAM for smooth installation
 - 💿 ISOs are cached - re-running with same version skips download
-- 📀 Disk images are auto-created if `--drive` path doesn't exist
+- 📀 Disk images are auto-created if `--image` path doesn't exist
 - 🔒 Tool detects non-empty disk images and skips ISO mounting to prevent data
   loss
 - 🏷️ Use VM names for easy management: `openbsd-up start my-web-server`
@@ -195,7 +195,7 @@ The state database allows you to:
 
 ```bash
 # Create a VM with persistent storage
-openbsd-up 7.8 --drive my-server.qcow2 --disk-format qcow2 --size 40G
+openbsd-up 7.8 --image my-server.qcow2 --disk-format qcow2 --size 40G
 
 # Later, restart the same VM (no ISO needed for installed systems)
 openbsd-up start <vm-name>
