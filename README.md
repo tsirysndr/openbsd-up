@@ -22,9 +22,13 @@ persistent state tracking.
 - ⚙️ **Configurable**: Customize CPU, memory, cores, and more
 - 🌐 **Network Ready**: Support for both NAT (SSH port forwarding) and bridge
   networking
-- 📝 **Serial Console**: Direct terminal access via `-nographic` mode
+- � **Port Forwarding**: Custom port mapping with `--port-forward` option
+- �📝 **Serial Console**: Direct terminal access via `-nographic` mode
 - 🗃️ **VM Management**: Persistent state tracking with SQLite database
-- 📋 **VM Lifecycle**: Start, stop, list, and inspect VMs with unique names
+- 📋 **VM Lifecycle**: Start, stop, restart, list, and inspect VMs with unique names
+- 🗑️ **VM Cleanup**: Remove VMs from tracking with `rm` command
+- 📊 **Logs Management**: View and follow VM logs in real-time
+- 🔄 **Background Mode**: Run VMs detached with `--detach` option
 - 🎯 **Smart Detection**: Automatically detects existing disk images to avoid
   data loss
 - 🔗 **Bridge Support**: Automatic bridge network creation and QEMU
@@ -73,11 +77,26 @@ openbsd-up ps --all
 # Start a specific VM by name or ID
 openbsd-up start my-vm-name
 
+# Start a VM in the background (detached mode)
+openbsd-up start my-vm-name --detach
+
 # Stop a running VM
 openbsd-up stop my-vm-name
 
+# Restart a VM
+openbsd-up restart my-vm-name
+
+# Remove a VM from state tracking
+openbsd-up rm my-vm-name
+
 # Inspect VM details and configuration
 openbsd-up inspect my-vm-name
+
+# View VM logs
+openbsd-up logs my-vm-name
+
+# Follow VM logs in real-time
+openbsd-up logs my-vm-name --follow
 ```
 
 ### Advanced Configuration
@@ -92,8 +111,14 @@ openbsd-up 7.8 \
   --disk-format qcow2 \
   --size 40G
 
+# Run VM in background (detached mode)
+openbsd-up 7.8 --detach
+
 # Bridge networking (requires sudo)
 openbsd-up 7.8 --bridge br0
+
+# Custom port forwarding (host:guest port mappings)
+openbsd-up 7.8 --port-forward 8080:80,3000:3000
 
 # Save downloaded ISO to specific location
 openbsd-up 7.8 --output ~/isos/openbsd-78.iso
@@ -103,16 +128,18 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 
 ### Global Options
 
-| Option          | Short | Description                                                  | Default        |
-| --------------- | ----- | ------------------------------------------------------------ | -------------- |
-| `--output`      | `-o`  | Output path for downloaded ISO                               | Auto-generated |
-| `--cpu`         | `-c`  | CPU type to emulate                                          | `host`         |
-| `--cpus`        | `-C`  | Number of CPU cores                                          | `2`            |
-| `--memory`      | `-m`  | RAM allocation                                               | `2G`           |
-| `--image`       | `-i`  | Path to persistent disk image                                | None           |
-| `--disk-format` |       | Disk format (qcow2, raw, etc.)                               | `raw`          |
-| `--size`        |       | Size of disk image to create if it doesn't exist             | `20G`          |
-| `--bridge`      | `-b`  | Name of the network bridge to use for networking (e.g., br0) | None           |
+| Option           | Short | Description                                                  | Default        |
+| ---------------- | ----- | ------------------------------------------------------------ | -------------- |
+| `--output`       | `-o`  | Output path for downloaded ISO                               | Auto-generated |
+| `--cpu`          | `-c`  | CPU type to emulate                                          | `host`         |
+| `--cpus`         | `-C`  | Number of CPU cores                                          | `2`            |
+| `--memory`       | `-m`  | RAM allocation                                               | `2G`           |
+| `--image`        | `-i`  | Path to persistent disk image                                | None           |
+| `--disk-format`  |       | Disk format (qcow2, raw, etc.)                               | `raw`          |
+| `--size`         |       | Size of disk image to create if it doesn't exist             | `20G`          |
+| `--bridge`       | `-b`  | Name of the network bridge to use for networking (e.g., br0) | None           |
+| `--detach`       | `-d`  | Run VM in the background and print VM name                   | `false`        |
+| `--port-forward` | `-p`  | Port forwarding rules (hostPort:guestPort, comma-separated)  | None           |
 
 ### Subcommands
 
@@ -121,7 +148,10 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 | `ps`             | List virtual machines                          | `openbsd-up ps --all`      |
 | `start <name>`   | Start a stopped VM by name or ID               | `openbsd-up start my-vm`   |
 | `stop <name>`    | Stop a running VM by name or ID                | `openbsd-up stop my-vm`    |
+| `restart <name>` | Restart a VM by name or ID                     | `openbsd-up restart my-vm` |
+| `rm <name>`      | Remove a VM from state tracking                | `openbsd-up rm my-vm`      |
 | `inspect <name>` | Show detailed VM information and configuration | `openbsd-up inspect my-vm` |
+| `logs <name>`    | View VM logs                                   | `openbsd-up logs my-vm`    |
 
 ## 🖥️ Console Setup
 
@@ -139,9 +169,24 @@ The tool supports two networking modes:
 
 ### NAT Mode (Default)
 
-- **SSH Port Forward**: `localhost:2222` → VM port `22`
+- **SSH Port Forward**: `localhost:2222` → VM port `22` (default)
+- **Custom Port Forwarding**: Configure with `--port-forward` option
 - **Network Device**: Intel E1000 emulated NIC
 - No special privileges required
+
+#### Custom Port Forwarding Examples
+
+```bash
+# Forward host port 8080 to VM port 80
+openbsd-up 7.8 --port-forward 8080:80
+
+# Multiple port forwards
+openbsd-up 7.8 --port-forward 8080:80,3000:3000,2222:22
+
+# Access services after VM is running
+curl http://localhost:8080  # Access VM's port 80
+ssh -p 2222 user@localhost  # SSH to VM
+```
 
 ### Bridge Mode
 
@@ -180,7 +225,7 @@ The state database allows you to:
 - Start/stop VMs by name or ID
 - Inspect detailed VM configurations
 
-## �💡 Tips
+## 💡 Tips
 
 - 🐏 Allocate at least 2GB RAM for smooth installation
 - 💿 ISOs are cached - re-running with same version skips download
@@ -190,6 +235,10 @@ The state database allows you to:
 - 🏷️ Use VM names for easy management: `openbsd-up start my-web-server`
 - 🌉 Bridge networking requires sudo but provides direct network access
 - 📊 Use `openbsd-up ps --all` to see both running and stopped VMs
+- 🔄 Use `--detach` mode to run VMs in the background
+- 🔗 Configure custom port forwarding with `--port-forward host:guest`
+- 📝 Monitor VM activity with `openbsd-up logs <name> --follow`
+- 🗑️ Clean up unused VMs with `openbsd-up rm <name>`
 
 ### Creating Persistent VMs
 
@@ -197,8 +246,17 @@ The state database allows you to:
 # Create a VM with persistent storage
 openbsd-up 7.8 --image my-server.qcow2 --disk-format qcow2 --size 40G
 
+# Run a VM in the background
+openbsd-up 7.8 --detach --image background-vm.img
+
+# Set up a web server VM with port forwarding
+openbsd-up 7.8 --image webserver.qcow2 --port-forward 8080:80,8443:443
+
 # Later, restart the same VM (no ISO needed for installed systems)
 openbsd-up start <vm-name>
+
+# Monitor the VM logs
+openbsd-up logs <vm-name> --follow
 ```
 
 ## 🔧 Architecture
