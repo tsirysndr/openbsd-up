@@ -16,6 +16,8 @@ export interface Options {
   diskFormat: string;
   size: string;
   bridge?: string;
+  portForward?: string;
+  detach?: boolean;
 }
 
 async function du(path: string): Promise<number> {
@@ -135,6 +137,28 @@ export async function setupFirmwareFilesIfNeeded(): Promise<string[]> {
   ];
 }
 
+export function setupPortForwardingArgs(portForward?: string): string {
+  if (!portForward) {
+    return "";
+  }
+
+  const forwards = portForward.split(",").map((pair) => {
+    const [hostPort, guestPort] = pair.split(":");
+    return `hostfwd=tcp::${hostPort}-:${guestPort}`;
+  });
+
+  return forwards.join(",");
+}
+
+export function setupNATNetworkArgs(portForward?: string): string {
+  if (!portForward) {
+    return "user,id=net0";
+  }
+
+  const portForwarding = setupPortForwardingArgs(portForward);
+  return `user,id=net0,${portForwarding}`;
+}
+
 export async function runQemu(
   isoPath: string | null,
   options: Options,
@@ -164,7 +188,7 @@ export async function runQemu(
       "-netdev",
       options.bridge
         ? `bridge,id=net0,br=${options.bridge}`
-        : "user,id=net0,hostfwd=tcp::2222-:22",
+        : setupNATNetworkArgs(options.portForward),
       "-device",
       `e1000,netdev=net0,mac=${macAddress}`,
       "-nographic",
@@ -199,6 +223,7 @@ export async function runQemu(
     cpu: options.cpu,
     diskSize: options.size,
     diskFormat: options.diskFormat,
+    portForward: options.portForward,
     isoPath: isoPath ? Deno.realPathSync(isoPath) : undefined,
     drivePath: options.image ? Deno.realPathSync(options.image) : undefined,
     version: DEFAULT_VERSION,
@@ -235,6 +260,56 @@ export function handleInput(input?: string): string {
   }
 
   return input;
+}
+
+export async function safeKillQemu(
+  pid: number,
+  useSudo: boolean = false,
+): Promise<boolean> {
+  // First try SIGTERM
+  const killArgs = useSudo
+    ? ["sudo", "kill", "-TERM", pid.toString()]
+    : ["kill", "-TERM", pid.toString()];
+
+  const termCmd = new Deno.Command(killArgs[0], {
+    args: killArgs.slice(1),
+    stdout: "null",
+    stderr: "null",
+  });
+
+  const termStatus = await termCmd.spawn().status;
+
+  if (termStatus.success) {
+    // Wait a bit for graceful shutdown
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // Check if process still exists
+    const checkCmd = new Deno.Command("kill", {
+      args: ["-0", pid.toString()],
+      stdout: "null",
+      stderr: "null",
+    });
+
+    const checkStatus = await checkCmd.spawn().status;
+    if (!checkStatus.success) {
+      // Process is gone, success
+      return true;
+    }
+  }
+
+  // If SIGTERM didn't work, try SIGKILL
+  const killKillArgs = useSudo
+    ? ["sudo", "kill", "-KILL", pid.toString()]
+    : ["kill", "-KILL", pid.toString()];
+
+  const killCmd = new Deno.Command(killKillArgs[0], {
+    args: killKillArgs.slice(1),
+    stdout: "null",
+    stderr: "null",
+  });
+
+  const killStatus = await killCmd.spawn().status;
+  return killStatus.success;
 }
 
 export async function createDriveImageIfNeeded(

@@ -1,6 +1,6 @@
 import chalk from "chalk";
-import _ from "lodash";
 import { getInstanceState, updateInstanceState } from "../state.ts";
+import { safeKillQemu } from "../utils.ts";
 
 export default async function (name: string) {
   const vm = await getInstanceState(name);
@@ -17,24 +17,13 @@ export default async function (name: string) {
     })...`,
   );
 
-  const cmd = new Deno.Command(vm.bridge ? "sudo" : "kill", {
-    args: [
-      ..._.compact([vm.bridge && "kill"]),
-      "-TERM",
-      vm.pid.toString(),
-    ],
-    stdin: "inherit",
-    stdout: "inherit",
-    stderr: "inherit",
-  });
+  const success = await safeKillQemu(vm.pid, Boolean(vm.bridge));
 
-  const status = await cmd.spawn().status;
-
-  if (!status.success) {
+  if (!success) {
     console.error(
       `Failed to stop virtual machine ${chalk.greenBright(vm.name)}.`,
     );
-    Deno.exit(status.code);
+    Deno.exit(1);
   }
 
   await updateInstanceState(vm.name, "STOPPED");
