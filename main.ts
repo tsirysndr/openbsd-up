@@ -5,6 +5,7 @@ import { createBridgeNetworkIfNeeded } from "./src/network.ts";
 import inspect from "./src/subcommands/inspect.ts";
 import logs from "./src/subcommands/logs.ts";
 import ps from "./src/subcommands/ps.ts";
+import pull from "./src/subcommands/pull.ts";
 import restart from "./src/subcommands/restart.ts";
 import rm from "./src/subcommands/rm.ts";
 import start from "./src/subcommands/start.ts";
@@ -166,6 +167,14 @@ if (import.meta.main) {
     .arguments("<vm-name:string>")
     .action(async (_options: unknown, vmName: string) => {
       await restart(vmName);
+    })
+    .command(
+      "pull",
+      "Pull VM image from an OCI-compliant registry, e.g., ghcr.io, docker hub",
+    )
+    .arguments("<image:string>")
+    .action(async (_options: unknown, image: string) => {
+      await pull;
     })
     .parse(Deno.args);
 }
