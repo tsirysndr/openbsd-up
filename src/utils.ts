@@ -11,7 +11,7 @@ import {
   updateInstanceState,
 } from "./state.ts";
 
-const DEFAULT_VERSION = "7.8";
+export const DEFAULT_VERSION = "7.8";
 
 export interface Options {
   output?: string;
@@ -29,6 +29,13 @@ export interface Options {
 class LogCommandError extends Data.TaggedError("LogCommandError")<{
   cause?: unknown;
 }> {}
+
+export const isValidISOurl = (url?: string): boolean => {
+  return Boolean(
+    (url?.startsWith("http://") || url?.startsWith("https://")) &&
+      url?.endsWith(".iso"),
+  );
+};
 
 const du = (path: string): Effect.Effect<number, LogCommandError, never> =>
   Effect.tryPromise({
