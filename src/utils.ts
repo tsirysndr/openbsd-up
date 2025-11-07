@@ -5,7 +5,11 @@ import { Data, Effect } from "effect";
 import Moniker from "moniker";
 import { EMPTY_DISK_THRESHOLD_KB, LOGS_DIR } from "./constants.ts";
 import { generateRandomMacAddress } from "./network.ts";
-import { saveInstanceState, updateInstanceState } from "./state.ts";
+import {
+  type DbError,
+  saveInstanceState,
+  updateInstanceState,
+} from "./state.ts";
 
 const DEFAULT_VERSION = "7.8";
 
@@ -26,7 +30,7 @@ class LogCommandError extends Data.TaggedError("LogCommandError")<{
   cause?: unknown;
 }> {}
 
-const du = (path: string) =>
+const du = (path: string): Effect.Effect<number, LogCommandError, never> =>
   Effect.tryPromise({
     try: async () => {
       const cmd = new Deno.Command("du", {
@@ -43,7 +47,9 @@ const du = (path: string) =>
     catch: (error) => new LogCommandError({ cause: error }),
   });
 
-export const emptyDiskImage = (path: string) =>
+export const emptyDiskImage = (
+  path: string,
+): Effect.Effect<boolean, LogCommandError, never> =>
   Effect.tryPromise({
     try: async () => {
       if (!await Deno.stat(path).catch(() => false)) {
@@ -63,7 +69,7 @@ export const emptyDiskImage = (path: string) =>
 export const downloadIso = (
   url: string,
   options: Options,
-) =>
+): Effect.Effect<string | null, LogCommandError, never> =>
   Effect.gen(function* () {
     const filename = url.split("/").pop()!;
     const outputPath = options.output ?? filename;
@@ -136,7 +142,11 @@ export function constructDownloadUrl(version: string): string {
   }.iso`;
 }
 
-export const setupFirmwareFilesIfNeeded = () =>
+export const setupFirmwareFilesIfNeeded = (): Effect.Effect<
+  string[],
+  LogCommandError,
+  never
+> =>
   Effect.gen(function* () {
     if (Deno.build.arch !== "aarch64") {
       return [];
@@ -209,7 +219,7 @@ export function setupNATNetworkArgs(portForward?: string): string {
 export const runQemu = (
   isoPath: string | null,
   options: Options,
-) =>
+): Effect.Effect<void, DbError | LogCommandError, never> =>
   Effect.gen(function* () {
     const macAddress = yield* generateRandomMacAddress();
 
@@ -376,7 +386,7 @@ export function handleInput(input?: string): string {
 export const safeKillQemu = (
   pid: number,
   useSudo: boolean = false,
-) =>
+): Effect.Effect<boolean, LogCommandError, never> =>
   Effect.gen(function* () {
     const killArgs = useSudo
       ? ["sudo", "kill", "-TERM", pid.toString()]
@@ -442,7 +452,7 @@ export const createDriveImageIfNeeded = (
     diskFormat: format,
     size,
   }: Options,
-) =>
+): Effect.Effect<void, LogCommandError, never> =>
   Effect.gen(function* () {
     const pathExists = yield* Effect.tryPromise({
       try: () => Deno.stat(path!).then(() => true).catch(() => false),

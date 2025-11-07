@@ -1,4 +1,5 @@
 import { Data, Effect } from "effect";
+import type { DeleteResult, InsertResult, UpdateResult } from "kysely";
 import { ctx } from "./context.ts";
 import type { VirtualMachine } from "./db.ts";
 import type { STATUS } from "./types.ts";
@@ -9,7 +10,7 @@ export class DbError extends Data.TaggedError("DatabaseError")<{
 
 export const saveInstanceState = (
   vm: VirtualMachine,
-) =>
+): Effect.Effect<InsertResult[], DbError, never> =>
   Effect.tryPromise({
     try: () =>
       ctx.db.insertInto("virtual_machines")
@@ -22,7 +23,7 @@ export const updateInstanceState = (
   name: string,
   status: STATUS,
   pid?: number,
-) =>
+): Effect.Effect<UpdateResult[], DbError, never> =>
   Effect.tryPromise({
     try: () =>
       ctx.db.updateTable("virtual_machines")
@@ -43,7 +44,7 @@ export const updateInstanceState = (
 
 export const removeInstanceState = (
   name: string,
-) =>
+): Effect.Effect<DeleteResult[], DbError, never> =>
   Effect.tryPromise({
     try: () =>
       ctx.db.deleteFrom("virtual_machines")

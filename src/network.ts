@@ -9,7 +9,9 @@ export class BridgeSetupError extends Data.TaggedError("BridgeSetupError")<{
   cause?: unknown;
 }> {}
 
-export const setupQemuBridge = (bridgeName: string) =>
+export const setupQemuBridge = (
+  bridgeName: string,
+): Effect.Effect<void, BridgeSetupError, never> =>
   Effect.tryPromise({
     try: async () => {
       const bridgeConfPath = "/etc/qemu/bridge.conf";
@@ -63,7 +65,7 @@ export const setupQemuBridge = (bridgeName: string) =>
 
 export const createBridgeNetworkIfNeeded = (
   bridgeName: string,
-) =>
+): Effect.Effect<void, NetworkError, never> =>
   Effect.tryPromise({
     try: async () => {
       const bridgeExistsCmd = new Deno.Command("ip", {
@@ -120,7 +122,11 @@ export const createBridgeNetworkIfNeeded = (
     catch: (error) => new NetworkError({ cause: error }),
   });
 
-export const generateRandomMacAddress = () =>
+export const generateRandomMacAddress = (): Effect.Effect<
+  string,
+  never,
+  never
+> =>
   Effect.sync(() => {
     const hexDigits = "0123456789ABCDEF";
     let macAddress = "52:54:00";
