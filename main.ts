@@ -240,7 +240,7 @@ if (import.meta.main) {
       console.log(
         `You can edit this file to customize your VM settings and then start the VM with:`,
       );
-      console.log(`  ${chalk.greenBright(`freebsd-up`)}`);
+      console.log(`  ${chalk.greenBright(`openbsd-up`)}`);
     })
     .parse(Deno.args);
 }
