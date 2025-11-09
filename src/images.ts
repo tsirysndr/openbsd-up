@@ -16,6 +16,22 @@ export const listImages = (): Effect.Effect<Image[], DbError, never> =>
       }),
   });
 
+export const getImage = (
+  id: string,
+): Effect.Effect<Image | undefined, DbError, never> =>
+  Effect.tryPromise({
+    try: () =>
+      ctx.db
+        .selectFrom("images")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst(),
+    catch: (error) =>
+      new DbError({
+        message: error instanceof Error ? error.message : String(error),
+      }),
+  });
+
 export const saveImage = (
   image: Image,
 ): Effect.Effect<InsertResult[], DbError, never> =>

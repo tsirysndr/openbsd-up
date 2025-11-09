@@ -1,27 +1,30 @@
 import { Data, Effect, pipe } from "effect";
-import type { VirtualMachine } from "../db.ts";
+import type { Image, VirtualMachine } from "../db.ts";
+import { getImage } from "../images.ts";
 import { getInstanceState } from "../state.ts";
 
-class VmNotFoundError extends Data.TaggedError("VmNotFoundError")<{
+class ItemNotFoundError extends Data.TaggedError("ItemNotFoundError")<{
   name: string;
 }> {}
 
-const findVm = (name: string) =>
+const find = (name: string) =>
   pipe(
-    getInstanceState(name),
-    Effect.flatMap((vm) =>
-      vm ? Effect.succeed(vm) : Effect.fail(new VmNotFoundError({ name }))
+    Effect.all([getInstanceState(name), getImage(name)]),
+    Effect.flatMap(([vm, image]) =>
+      vm || image
+        ? Effect.succeed(vm || image)
+        : Effect.fail(new ItemNotFoundError({ name }))
     ),
   );
 
-const displayVm = (vm: VirtualMachine) =>
+const display = (vm: VirtualMachine | Image | undefined) =>
   Effect.sync(() => {
     console.log(vm);
   });
 
-const handleError = (error: VmNotFoundError | Error) =>
+const handleError = (error: ItemNotFoundError | Error) =>
   Effect.sync(() => {
-    if (error instanceof VmNotFoundError) {
+    if (error instanceof ItemNotFoundError) {
       console.error(
         `Virtual machine with name or ID ${error.name} not found.`,
       );
@@ -33,8 +36,8 @@ const handleError = (error: VmNotFoundError | Error) =>
 
 const inspectEffect = (name: string) =>
   pipe(
-    findVm(name),
-    Effect.flatMap(displayVm),
+    find(name),
+    Effect.flatMap(display),
     Effect.catchAll(handleError),
   );
 
