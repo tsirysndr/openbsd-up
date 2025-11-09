@@ -2,12 +2,11 @@ import { createId } from "@paralleldrive/cuid2";
 import { Effect, pipe } from "effect";
 import { saveImage } from "../images.ts";
 import { getInstanceState, type VirtualMachine } from "../mod.ts";
-import { du } from "../utils.ts";
+import { du, extractTag } from "../utils.ts";
 
-const extractTag = (name: string) =>
-  Effect.sync(() => name.split(":")[1] || "latest");
-
-const failIfNoVM = ([vm, name]: [VirtualMachine | undefined, string]) =>
+const failIfNoVM = (
+  [vm, tag]: [VirtualMachine | undefined, string],
+) =>
   Effect.gen(function* () {
     if (!vm) {
       throw new Error(`VM with name ${name} not found`);
@@ -18,7 +17,7 @@ const failIfNoVM = ([vm, name]: [VirtualMachine | undefined, string]) =>
 
     const size = yield* du(vm.drivePath);
 
-    return [vm, name, size] as [VirtualMachine, string, number];
+    return [vm, tag, size] as [VirtualMachine, string, number];
   });
 
 export default async function (name: string, image: string) {
@@ -29,7 +28,7 @@ export default async function (name: string, image: string) {
       Effect.flatMap(([vm, tag, size]) =>
         saveImage({
           id: createId(),
-          repository: image,
+          repository: image.split(":")[0],
           tag,
           size,
           path: vm.drivePath!,
@@ -38,7 +37,7 @@ export default async function (name: string, image: string) {
       ),
       Effect.catchAll((error) =>
         Effect.sync(() => {
-          console.error(`Failed to tag image: ${error}`);
+          console.error(`Failed to tag image: ${error.cause}`);
           Deno.exit(1);
         })
       ),

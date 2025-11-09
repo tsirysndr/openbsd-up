@@ -45,6 +45,7 @@ export type Image = {
   size: number;
   path: string;
   format: string;
+  digest?: string;
   createdAt?: string;
 };
 

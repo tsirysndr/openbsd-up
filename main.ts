@@ -8,7 +8,9 @@ import { Effect, pipe } from "effect";
 import pkg from "./deno.json" with { type: "json" };
 import { initVmFile, mergeConfig, parseVmFile } from "./src/config.ts";
 import { CONFIG_FILE_NAME } from "./src/constants.ts";
+import { getImage } from "./src/images.ts";
 import { createBridgeNetworkIfNeeded } from "./src/network.ts";
+import { getImageArchivePath } from "./src/oras.ts";
 import images from "./src/subcommands/images.ts";
 import inspect from "./src/subcommands/inspect.ts";
 import login from "./src/subcommands/login.ts";
@@ -20,6 +22,7 @@ import push from "./src/subcommands/push.ts";
 import restart from "./src/subcommands/restart.ts";
 import rm from "./src/subcommands/rm.ts";
 import rmi from "./src/subcommands/rmi.ts";
+import run from "./src/subcommands/run.ts";
 import start from "./src/subcommands/start.ts";
 import stop from "./src/subcommands/stop.ts";
 import tag from "./src/subcommands/tag.ts";
@@ -80,6 +83,10 @@ if (import.meta.main) {
       "-p, --port-forward <mappings:string>",
       "Port forwarding rules in the format hostPort:guestPort (comma-separated for multiple)",
     )
+    .option(
+      "--install",
+      "Persist changes to the VM disk image",
+    )
     .example(
       "Default usage",
       "openbsd-up",
@@ -95,6 +102,10 @@ if (import.meta.main) {
     .example(
       "Download URL",
       "openbsd-up https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/install78.iso",
+    )
+    .example(
+      "From OCI Registry",
+      "openbsd-up ghcr.io/tsirysndr/openbsd:7.8",
     )
     .example(
       "List running VMs",
@@ -122,6 +133,24 @@ if (import.meta.main) {
     )
     .action(async (options: Options, input?: string) => {
       const program = Effect.gen(function* () {
+        if (input) {
+          const [image, archivePath] = yield* Effect.all([
+            getImage(input),
+            pipe(
+              getImageArchivePath(input),
+              Effect.catchAll(() => Effect.succeed(null)),
+            ),
+          ]);
+
+          if (image || archivePath) {
+            yield* Effect.tryPromise({
+              try: () => run(input),
+              catch: () => {},
+            });
+            return;
+          }
+        }
+
         const resolvedInput = handleInput(input);
         let isoPath: string | null = resolvedInput;
 
@@ -273,16 +302,11 @@ if (import.meta.main) {
     )
     .arguments("<vm-name:string> <image:string>")
     .action(async (_options: unknown, vmName: string, image: string) => {
-      console.log(
-        `Tagging VM image of ${chalk.greenBright(vmName)} as ${
-          chalk.greenBright(image)
-        }...`,
-      );
       await tag(vmName, image);
     })
     .command(
       "login",
-      "Login to an OCI-compliant registry, e.g., ghcr.io, docker.io (docker hub), etc.",
+      "Authenticate to an OCI-compliant registry, e.g., ghcr.io, docker.io (docker hub), etc.",
     )
     .option("-u, --username <username:string>", "Registry username")
     .arguments("<registry:string>")
@@ -300,7 +324,7 @@ if (import.meta.main) {
       }
 
       console.log(
-        `Logging in to registry ${chalk.greenBright(registry)} as ${
+        `Authenticating to registry ${chalk.greenBright(registry)} as ${
           chalk.greenBright(username)
         }...`,
       );
@@ -319,6 +343,32 @@ if (import.meta.main) {
     .arguments("<image:string>")
     .action(async (_options: unknown, image: string) => {
       await rmi(image);
+    })
+    .command("run", "Create and run a VM from an image")
+    .arguments("<image:string>")
+    .option("-c, --cpu <type:string>", "Type of CPU to emulate", {
+      default: "host",
+    })
+    .option("-C, --cpus <number:number>", "Number of CPU cores", {
+      default: 2,
+    })
+    .option("-m, --memory <size:string>", "Amount of memory for the VM", {
+      default: "2G",
+    })
+    .option(
+      "-b, --bridge <name:string>",
+      "Name of the network bridge to use for networking (e.g., br0)",
+    )
+    .option(
+      "-d, --detach",
+      "Run VM in the background and print VM name",
+    )
+    .option(
+      "-p, --port-forward <mappings:string>",
+      "Port forwarding rules in the format hostPort:guestPort (comma-separated for multiple)",
+    )
+    .action(async (_options: unknown, image: string) => {
+      await run(image);
     })
     .parse(Deno.args);
 }

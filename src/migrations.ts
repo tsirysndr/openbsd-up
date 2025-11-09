@@ -203,6 +203,21 @@ migrations["006"] = {
   },
 };
 
+migrations["007"] = {
+  async up(db: Kysely<unknown>): Promise<void> {
+    await db.schema
+      .alterTable("images")
+      .addColumn("digest", "varchar")
+      .execute();
+  },
+  async down(db: Kysely<unknown>): Promise<void> {
+    await db.schema
+      .alterTable("images")
+      .dropColumn("digest")
+      .execute();
+  },
+};
+
 export const migrateToLatest = async (db: Database): Promise<void> => {
   const migrator = new Migrator({ db, provider: migrationProvider });
   const { error } = await migrator.migrateToLatest();

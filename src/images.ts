@@ -24,7 +24,16 @@ export const getImage = (
       ctx.db
         .selectFrom("images")
         .selectAll()
-        .where("id", "=", id)
+        .where((eb) =>
+          eb.or([
+            eb.and([
+              eb("repository", "=", id.split(":")[0]),
+              eb("tag", "=", id.split(":")[1] || "latest"),
+            ]),
+            eb("id", "=", id),
+            eb("digest", "=", id),
+          ])
+        )
         .executeTakeFirst(),
     catch: (error) =>
       new DbError({
@@ -47,6 +56,7 @@ export const saveImage = (
               size: image.size,
               path: image.path,
               format: image.format,
+              digest: image.digest,
             })
         )
         .execute(),
@@ -60,7 +70,16 @@ export const deleteImage = (
   id: string,
 ): Effect.Effect<DeleteResult[], DbError, never> =>
   Effect.tryPromise({
-    try: () => ctx.db.deleteFrom("images").where("id", "=", id).execute(),
+    try: () =>
+      ctx.db.deleteFrom("images").where((eb) =>
+        eb.or([
+          eb.and([
+            eb("repository", "=", id.split(":")[0]),
+            eb("tag", "=", id.split(":")[1] || "latest"),
+          ]),
+          eb("id", "=", id),
+        ])
+      ).execute(),
     catch: (error) =>
       new DbError({
         message: error instanceof Error ? error.message : String(error),

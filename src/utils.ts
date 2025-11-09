@@ -1,9 +1,10 @@
 import _ from "@es-toolkit/es-toolkit/compat";
 import { createId } from "@paralleldrive/cuid2";
 import chalk from "chalk";
-import { Data, Effect } from "effect";
+import { Data, Effect, pipe } from "effect";
 import Moniker from "moniker";
 import { EMPTY_DISK_THRESHOLD_KB, LOGS_DIR } from "./constants.ts";
+import type { Image } from "./db.ts";
 import { generateRandomMacAddress } from "./network.ts";
 import {
   type DbError,
@@ -19,16 +20,37 @@ export interface Options {
   cpus: number;
   memory: string;
   image?: string;
-  diskFormat: string;
-  size: string;
+  diskFormat?: string;
+  size?: string;
   bridge?: string;
   portForward?: string;
   detach?: boolean;
+  install?: boolean;
 }
 
 class LogCommandError extends Data.TaggedError("LogCommandError")<{
   cause?: unknown;
 }> {}
+
+class InvalidImageNameError extends Data.TaggedError("InvalidImageNameError")<{
+  image: string;
+  cause?: unknown;
+}> {}
+
+class NoSuchImageError extends Data.TaggedError("NoSuchImageError")<{
+  cause: string;
+}> {}
+
+export const getCurrentArch = (): string => {
+  switch (Deno.build.arch) {
+    case "x86_64":
+      return "amd64";
+    case "aarch64":
+      return "arm64";
+    default:
+      return Deno.build.arch;
+  }
+};
 
 export const isValidISOurl = (url?: string): boolean => {
   return Boolean(
@@ -37,18 +59,57 @@ export const isValidISOurl = (url?: string): boolean => {
   );
 };
 
-export const humanFileSize = (bytes: number) =>
+export const humanFileSize = (blocks: number) =>
   Effect.sync(() => {
+    const blockSize = 512; // bytes per block
+    let bytes = blocks * blockSize;
     const thresh = 1024;
-    if (Math.abs(bytes) < thresh) return bytes + "KB";
-    const units = ["MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+
+    if (Math.abs(bytes) < thresh) {
+      return `${bytes}B`;
+    }
+
+    const units = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
     let u = -1;
+
     do {
       bytes /= thresh;
       ++u;
     } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+
     return `${bytes.toFixed(1)}${units[u]}`;
   });
+
+export const validateImage = (
+  image: string,
+): Effect.Effect<string, InvalidImageNameError, never> => {
+  const regex =
+    /^(?:[a-zA-Z0-9.-]+(?:\.[a-zA-Z0-9.-]+)*\/)?[a-z0-9]+(?:[._-][a-z0-9]+)*\/[a-z0-9]+(?:[._-][a-z0-9]+)*(?::[a-zA-Z0-9._-]+)?$/;
+
+  if (!regex.test(image)) {
+    return Effect.fail(
+      new InvalidImageNameError({
+        image,
+        cause:
+          "Image name does not conform to expected format. Should be in the format 'repository/name:tag'.",
+      }),
+    );
+  }
+  return Effect.succeed(image);
+};
+
+export const extractTag = (name: string) =>
+  pipe(
+    validateImage(name),
+    Effect.flatMap((image) => Effect.succeed(image.split(":")[1] || "latest")),
+  );
+
+export const failOnMissingImage = (
+  image: Image | undefined,
+): Effect.Effect<Image, Error, never> =>
+  image
+    ? Effect.succeed(image)
+    : Effect.fail(new NoSuchImageError({ cause: "No such image" }));
 
 export const du = (
   path: string,
@@ -268,6 +329,7 @@ export const runQemu = (
         : setupNATNetworkArgs(options.portForward),
       "-device",
       `e1000,netdev=net0,mac=${macAddress}`,
+      ...(options.install ? [] : ["-snapshot"]),
       "-nographic",
       "-monitor",
       "none",
@@ -322,8 +384,8 @@ export const runQemu = (
         memory: options.memory,
         cpus: options.cpus,
         cpu: options.cpu,
-        diskSize: options.size,
-        diskFormat: options.diskFormat,
+        diskSize: options.size || "20G",
+        diskFormat: options.diskFormat || "raw",
         portForward: options.portForward,
         isoPath: isoPath ? Deno.realPathSync(isoPath) : undefined,
         drivePath: options.image ? Deno.realPathSync(options.image) : undefined,
@@ -356,8 +418,8 @@ export const runQemu = (
         memory: options.memory,
         cpus: options.cpus,
         cpu: options.cpu,
-        diskSize: options.size,
-        diskFormat: options.diskFormat,
+        diskSize: options.size || "20G",
+        diskFormat: options.diskFormat || "raw",
         portForward: options.portForward,
         isoPath: isoPath ? Deno.realPathSync(isoPath) : undefined,
         drivePath: options.image ? Deno.realPathSync(options.image) : undefined,
@@ -493,7 +555,7 @@ export const createDriveImageIfNeeded = (
     const status = yield* Effect.tryPromise({
       try: async () => {
         const cmd = new Deno.Command("qemu-img", {
-          args: ["create", "-f", format, path!, size!],
+          args: ["create", "-f", format || "raw", path!, size || "20G"],
           stdin: "inherit",
           stdout: "inherit",
           stderr: "inherit",
