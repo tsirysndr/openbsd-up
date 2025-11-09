@@ -1,2 +1,5 @@
-export default async function (name: string): Promise<void> {
+import { setupOrasBinary } from "../oras.ts";
+
+export default async function (image: string): Promise<void> {
+  await setupOrasBinary();
 }

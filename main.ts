@@ -1,20 +1,28 @@
 #!/usr/bin/env -S deno run --allow-run --allow-read --allow-env
 
 import { Command } from "@cliffy/command";
+import { Secret } from "@cliffy/prompt/secret";
+import { readAll } from "@std/io";
 import chalk from "chalk";
 import { Effect, pipe } from "effect";
 import pkg from "./deno.json" with { type: "json" };
 import { initVmFile, mergeConfig, parseVmFile } from "./src/config.ts";
 import { CONFIG_FILE_NAME } from "./src/constants.ts";
 import { createBridgeNetworkIfNeeded } from "./src/network.ts";
+import images from "./src/subcommands/images.ts";
 import inspect from "./src/subcommands/inspect.ts";
+import login from "./src/subcommands/login.ts";
+import logout from "./src/subcommands/logout.ts";
 import logs from "./src/subcommands/logs.ts";
 import ps from "./src/subcommands/ps.ts";
 import pull from "./src/subcommands/pull.ts";
+import push from "./src/subcommands/push.ts";
 import restart from "./src/subcommands/restart.ts";
 import rm from "./src/subcommands/rm.ts";
+import rmi from "./src/subcommands/rmi.ts";
 import start from "./src/subcommands/start.ts";
 import stop from "./src/subcommands/stop.ts";
+import tag from "./src/subcommands/tag.ts";
 import {
   createDriveImageIfNeeded,
   downloadIso,
@@ -250,6 +258,67 @@ if (import.meta.main) {
     .arguments("<image:string>")
     .action(async (_options: unknown, image: string) => {
       await pull(image);
+    })
+    .command(
+      "push",
+      "Push VM image to an OCI-compliant registry, e.g., ghcr.io, docker hub",
+    )
+    .arguments("<image:string>")
+    .action(async (_options: unknown, image: string) => {
+      await push(image);
+    })
+    .command(
+      "tag",
+      "Create a tag 'image' that refers to the VM image of 'vm-name'",
+    )
+    .arguments("<vm-name:string> <image:string>")
+    .action(async (_options: unknown, vmName: string, image: string) => {
+      console.log(
+        `Tagging VM image of ${chalk.greenBright(vmName)} as ${
+          chalk.greenBright(image)
+        }...`,
+      );
+      await tag(vmName, image);
+    })
+    .command(
+      "login",
+      "Login to an OCI-compliant registry, e.g., ghcr.io, docker.io (docker hub), etc.",
+    )
+    .option("-u, --username <username:string>", "Registry username")
+    .arguments("<registry:string>")
+    .action(async (options: unknown, registry: string) => {
+      const username = (options as { username: string }).username;
+
+      let password: string | undefined;
+      const stdinIsTTY = Deno.stdin.isTerminal();
+
+      if (!stdinIsTTY) {
+        const buffer = await readAll(Deno.stdin);
+        password = new TextDecoder().decode(buffer).trim();
+      } else {
+        password = await Secret.prompt("Registry Password: ");
+      }
+
+      console.log(
+        `Logging in to registry ${chalk.greenBright(registry)} as ${
+          chalk.greenBright(username)
+        }...`,
+      );
+      await login(username, password, registry);
+    })
+    .command("logout", "Logout from an OCI-compliant registry")
+    .arguments("<registry:string>")
+    .action(async (_options: unknown, registry: string) => {
+      await logout(registry);
+    })
+    .command("images", "List all local VM images")
+    .action(async () => {
+      await images();
+    })
+    .command("rmi", "Remove a local VM image")
+    .arguments("<image:string>")
+    .action(async (_options: unknown, image: string) => {
+      await rmi(image);
     })
     .parse(Deno.args);
 }
