@@ -121,7 +121,7 @@ openbsd-up images
 # Remove an image
 openbsd-up rmi my-openbsd:latest
 
-# Run a container from an image
+# Run a VM from an image
 openbsd-up run ghcr.io/tsirysndr/openbsd:7.8
 
 # Inspect image details
@@ -186,7 +186,7 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 | `tag <s> <t>`  | Tag an image with a new name        | `openbsd-up tag source:tag target:tag`     |
 | `images`       | List local images                   | `openbsd-up images`                        |
 | `rmi <image>`  | Remove an image                     | `openbsd-up rmi my-openbsd:latest`         |
-| `run <image>`  | Run a container from an image       | `openbsd-up run ghcr.io/user/openbsd:7.8`  |
+| `run <image>`  | Run a VM from an image              | `openbsd-up run ghcr.io/user/openbsd:7.8`  |
 
 ## 🖥️ Console Setup
 
