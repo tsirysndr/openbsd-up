@@ -15,24 +15,28 @@ persistent state tracking.
 
 - 🚀 **Quick Start**: Launch OpenBSD VMs with a single command
 - 📦 **Auto-Download**: Automatically fetches OpenBSD ISO images from official
-  CDN
+  CDN or OCI registries
 - 🔢 **Version Support**: Specify any OpenBSD version (e.g., `7.8`, `6.4`)
 - 💾 **Flexible Storage**: Support for persistent disk images in multiple
   formats with auto-creation
-- ⚙️ **Configurable**: Customize CPU, memory, cores, and more
+- 🐳 **OCI Support**: Push, pull, and manage OpenBSD VM images using OCI
+  registries
+- ⚙️ **Configurable**: Customize CPU, memory, cores, and more via TOML config
 - 🌐 **Network Ready**: Support for both NAT (SSH port forwarding) and bridge
   networking
-- � **Port Forwarding**: Custom port mapping with `--port-forward` option
-- �📝 **Serial Console**: Direct terminal access via `-nographic` mode
+- 🔌 **Port Forwarding**: Custom port mapping with `--port-forward` option
+- 📝 **Serial Console**: Direct terminal access via `-nographic` mode
 - 🗃️ **VM Management**: Persistent state tracking with SQLite database
-- 📋 **VM Lifecycle**: Start, stop, restart, list, and inspect VMs with unique names
-- 🗑️ **VM Cleanup**: Remove VMs from tracking with `rm` command
+- 📋 **VM Lifecycle**: Start, stop, restart, list, and inspect VMs with unique
+  names
+- 🗑️ **VM Cleanup**: Remove VMs and images with `rm` and `rmi` commands
 - 📊 **Logs Management**: View and follow VM logs in real-time
 - 🔄 **Background Mode**: Run VMs detached with `--detach` option
 - 🎯 **Smart Detection**: Automatically detects existing disk images to avoid
   data loss
 - 🔗 **Bridge Support**: Automatic bridge network creation and QEMU
   configuration
+- 🏷️ **Image Tags**: Tag and manage VM images with custom names
 
 ## 🛠️ Requirements
 
@@ -99,6 +103,31 @@ openbsd-up logs my-vm-name
 openbsd-up logs my-vm-name --follow
 ```
 
+### Image Management
+
+```bash
+# Pull an OpenBSD image from an OCI registry
+openbsd-up pull ghcr.io/tsirysndr/openbsd:7.8
+
+# Push an OpenBSD image to an OCI registry
+openbsd-up push my-openbsd-image:latest
+
+# Tag an image
+openbsd-up tag ghcr.io/tsirysndr/openbsd:7.8 my-openbsd:latest
+
+# List local images
+openbsd-up images
+
+# Remove an image
+openbsd-up rmi my-openbsd:latest
+
+# Run a container from an image
+openbsd-up run ghcr.io/tsirysndr/openbsd:7.8
+
+# Inspect image details
+openbsd-up inspect ghcr.io/tsirysndr/openbsd:7.8
+```
+
 ### Advanced Configuration
 
 ```bash
@@ -143,15 +172,21 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 
 ### Subcommands
 
-| Command          | Description                                    | Example                    |
-| ---------------- | ---------------------------------------------- | -------------------------- |
-| `ps`             | List virtual machines                          | `openbsd-up ps --all`      |
-| `start <name>`   | Start a stopped VM by name or ID               | `openbsd-up start my-vm`   |
-| `stop <name>`    | Stop a running VM by name or ID                | `openbsd-up stop my-vm`    |
-| `restart <name>` | Restart a VM by name or ID                     | `openbsd-up restart my-vm` |
-| `rm <name>`      | Remove a VM from state tracking                | `openbsd-up rm my-vm`      |
-| `inspect <name>` | Show detailed VM information and configuration | `openbsd-up inspect my-vm` |
-| `logs <name>`    | View VM logs                                   | `openbsd-up logs my-vm`    |
+| Command        | Description                         | Example                                    |
+| -------------- | ----------------------------------- | ------------------------------------------ |
+| `ps`           | List virtual machines               | `openbsd-up ps --all`                      |
+| `start <n>`    | Start a stopped VM by name or ID    | `openbsd-up start my-vm`                   |
+| `stop <n>`     | Stop a running VM by name or ID     | `openbsd-up stop my-vm`                    |
+| `restart <n>`  | Restart a VM by name or ID          | `openbsd-up restart my-vm`                 |
+| `rm <n>`       | Remove a VM from state tracking     | `openbsd-up rm my-vm`                      |
+| `inspect <n>`  | Show detailed VM/image information  | `openbsd-up inspect my-vm`                 |
+| `logs <n>`     | View VM logs                        | `openbsd-up logs my-vm`                    |
+| `pull <image>` | Pull an OpenBSD image from registry | `openbsd-up pull ghcr.io/user/openbsd:7.8` |
+| `push <image>` | Push an OpenBSD image to registry   | `openbsd-up push my-openbsd:latest`        |
+| `tag <s> <t>`  | Tag an image with a new name        | `openbsd-up tag source:tag target:tag`     |
+| `images`       | List local images                   | `openbsd-up images`                        |
+| `rmi <image>`  | Remove an image                     | `openbsd-up rmi my-openbsd:latest`         |
+| `run <image>`  | Run a container from an image       | `openbsd-up run ghcr.io/user/openbsd:7.8`  |
 
 ## 🖥️ Console Setup
 
