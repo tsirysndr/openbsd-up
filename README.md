@@ -22,6 +22,7 @@ persistent state tracking.
 - 🐳 **OCI Support**: Push, pull, and manage OpenBSD VM images using OCI
   registries
 - ⚙️ **Configurable**: Customize CPU, memory, cores, and more via TOML config
+  file
 - 🌐 **Network Ready**: Support for both NAT (SSH port forwarding) and bridge
   networking
 - 🔌 **Port Forwarding**: Custom port mapping with `--port-forward` option
@@ -37,6 +38,8 @@ persistent state tracking.
 - 🔗 **Bridge Support**: Automatic bridge network creation and QEMU
   configuration
 - 🏷️ **Image Tags**: Tag and manage VM images with custom names
+- 💽 **Volume Management**: Create, attach, list, and manage persistent volumes
+- 🌐 **HTTP API**: RESTful API server for programmatic VM management
 
 ## 🛠️ Requirements
 
@@ -128,6 +131,32 @@ openbsd-up run ghcr.io/tsirysndr/openbsd:7.8
 openbsd-up inspect ghcr.io/tsirysndr/openbsd:7.8
 ```
 
+### Volume Management
+
+```bash
+# List all volumes
+openbsd-up volumes
+
+# Attach a volume to a VM (creates volume if it doesn't exist)
+openbsd-up start my-vm --volume data-volume
+
+# Inspect volume details
+openbsd-up volume inspect data-volume
+
+# Remove a volume
+openbsd-up volume rm data-volume
+```
+
+### Configuration File
+
+```bash
+# Initialize a vmconfig.toml configuration file
+openbsd-up init
+
+# Start VM using configuration from vmconfig.toml
+openbsd-up
+```
+
 ### Advanced Configuration
 
 ```bash
@@ -172,28 +201,33 @@ openbsd-up 7.8 --output ~/isos/openbsd-78.iso
 
 ### Subcommands
 
-| Command        | Description                         | Example                                    |
-| -------------- | ----------------------------------- | ------------------------------------------ |
-| `ps`           | List virtual machines               | `openbsd-up ps --all`                      |
-| `start <n>`    | Start a stopped VM by name or ID    | `openbsd-up start my-vm`                   |
-| `stop <n>`     | Stop a running VM by name or ID     | `openbsd-up stop my-vm`                    |
-| `restart <n>`  | Restart a VM by name or ID          | `openbsd-up restart my-vm`                 |
-| `rm <n>`       | Remove a VM from state tracking     | `openbsd-up rm my-vm`                      |
-| `inspect <n>`  | Show detailed VM/image information  | `openbsd-up inspect my-vm`                 |
-| `logs <n>`     | View VM logs                        | `openbsd-up logs my-vm`                    |
-| `pull <image>` | Pull an OpenBSD image from registry | `openbsd-up pull ghcr.io/user/openbsd:7.8` |
-| `push <image>` | Push an OpenBSD image to registry   | `openbsd-up push my-openbsd:latest`        |
-| `tag <s> <t>`  | Tag an image with a new name        | `openbsd-up tag source:tag target:tag`     |
-| `images`       | List local images                   | `openbsd-up images`                        |
-| `rmi <image>`  | Remove an image                     | `openbsd-up rmi my-openbsd:latest`         |
-| `run <image>`  | Run a VM from an image              | `openbsd-up run ghcr.io/user/openbsd:7.8`  |
+| Command              | Description                            | Example                                    |
+| -------------------- | -------------------------------------- | ------------------------------------------ |
+| `ps`                 | List virtual machines                  | `openbsd-up ps --all`                      |
+| `start <n>`          | Start a stopped VM by name or ID       | `openbsd-up start my-vm`                   |
+| `stop <n>`           | Stop a running VM by name or ID        | `openbsd-up stop my-vm`                    |
+| `restart <n>`        | Restart a VM by name or ID             | `openbsd-up restart my-vm`                 |
+| `rm <n>`             | Remove a VM from state tracking        | `openbsd-up rm my-vm`                      |
+| `inspect <n>`        | Show detailed VM/image information     | `openbsd-up inspect my-vm`                 |
+| `logs <n>`           | View VM logs                           | `openbsd-up logs my-vm`                    |
+| `init`               | Initialize a vmconfig.toml config file | `openbsd-up init`                          |
+| `pull <image>`       | Pull an OpenBSD VM image from registry | `openbsd-up pull ghcr.io/user/openbsd:7.8` |
+| `push <image>`       | Push an OpenBSD VM image to registry   | `openbsd-up push my-openbsd:latest`        |
+| `tag <s> <t>`        | Tag an image with a new name           | `openbsd-up tag source:tag target:tag`     |
+| `images`             | List local images                      | `openbsd-up images`                        |
+| `rmi <image>`        | Remove an image                        | `openbsd-up rmi my-openbsd:latest`         |
+| `run <image>`        | Run a VM from an image                 | `openbsd-up run ghcr.io/user/openbsd:7.8`  |
+| `volumes`            | List all volumes                       | `openbsd-up volumes`                       |
+| `volume inspect <n>` | Inspect volume details                 | `openbsd-up volume inspect data-volume`    |
+| `volume rm <n>`      | Remove a volume                        | `openbsd-up volume rm data-volume`         |
+| `serve`              | Start HTTP API server                  | `openbsd-up serve --port 8891`             |
 
 ## 🖥️ Console Setup
 
 When OpenBSD boots, you'll see the boot loader prompt, enter the following
 command:
 
-```
+```sh
 set tty com0
 boot
 ```
@@ -274,6 +308,9 @@ The state database allows you to:
 - 🔗 Configure custom port forwarding with `--port-forward host:guest`
 - 📝 Monitor VM activity with `openbsd-up logs <name> --follow`
 - 🗑️ Clean up unused VMs with `openbsd-up rm <name>`
+- 💽 Use volumes for shared persistent storage across VMs
+- ⚙️ Use `vmconfig.toml` configuration file for consistent VM setups
+- 🌐 Enable HTTP API for automation and integration with other tools
 
 ### Creating Persistent VMs
 
@@ -284,9 +321,6 @@ openbsd-up 7.8 --image my-server.qcow2 --disk-format qcow2 --size 40G
 # Run a VM in the background
 openbsd-up 7.8 --detach --image background-vm.img
 
-# Set up a web server VM with port forwarding
-openbsd-up 7.8 --image webserver.qcow2 --port-forward 8080:80,8443:443
-
 # Later, restart the same VM (no ISO needed for installed systems)
 openbsd-up start <vm-name>
 
@@ -294,12 +328,90 @@ openbsd-up start <vm-name>
 openbsd-up logs <vm-name> --follow
 ```
 
+## 🌐 HTTP API
+
+`openbsd-up` includes a RESTful HTTP API server for programmatic VM management:
+
+```bash
+# Start the API server (default port: 8891)
+openbsd-up serve
+
+# Start on a custom port
+openbsd-up serve --port 3000
+```
+
+### Authentication
+
+The API uses Bearer token authentication. Set your token via environment
+variable:
+
+```bash
+export OPENBSD_UP_API_TOKEN="your-secret-token"
+openbsd-up serve
+```
+
+If not set, a random token will be generated and displayed at startup.
+
+### API Endpoints
+
+The API provides endpoints for managing:
+
+- **Machines**: `/machines/*` - Create, start, stop, list, and inspect VMs
+- **Images**: `/images/*` - Pull, push, tag, list, and remove images
+- **Volumes**: `/volumes/*` - Create, list, inspect, and remove volumes
+
+### Example Usage
+
+```bash
+# List all VMs
+curl -H "Authorization: Bearer your-token" http://localhost:8891/machines
+
+# Start a VM
+curl -X POST -H "Authorization: Bearer your-token" \
+  http://localhost:8891/machines/my-vm/start
+
+# List volumes
+curl -H "Authorization: Bearer your-token" http://localhost:8891/volumes
+```
+
+## 📝 Configuration File
+
+Create a `vmconfig.toml` file to define default VM settings:
+
+```bash
+# Initialize configuration file
+openbsd-up init
+```
+
+Example `vmconfig.toml`:
+
+```toml
+[vm]
+iso = "https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/install78.iso"
+cpu = "host"
+cpus = 4
+memory = "4G"
+image = "openbsd.qcow2"
+disk_format = "qcow2"
+size = "40G"
+
+[network]
+port_forward = "2222:22,8080:80"
+
+[options]
+detach = false
+```
+
+Once configured, simply run `openbsd-up` to start the VM with your settings.
+
 ## 🔧 Architecture
 
 Built with modern TypeScript and Deno, featuring:
 
 - **CLI Framework**: [Cliffy](https://cliffy.io/) for robust command-line
   interface
+- **HTTP Framework**: [Hono](https://hono.dev/) for fast and lightweight API
+  server
 - **Database**: SQLite with [Kysely](https://kysely.dev/) query builder for
   type-safe operations
 - **State Management**: Persistent VM state tracking with migrations
