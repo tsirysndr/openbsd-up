@@ -27,6 +27,7 @@ import start from "./src/subcommands/start.ts";
 import stop from "./src/subcommands/stop.ts";
 import tag from "./src/subcommands/tag.ts";
 import * as volumes from "./src/subcommands/volume.ts";
+import serve from "./src/api/mod.ts";
 import {
   createDriveImageIfNeeded,
   downloadIso,
@@ -397,5 +398,11 @@ if (import.meta.main) {
           await volumes.inspect(volumeName);
         }),
     )
+    .description("Manage volumes")
+    .command("serve", "Start the OpenBSD-Up HTTP API server")
+    .option("-p, --port <port:number>", "Port to listen on", { default: 8891 })
+    .action(() => {
+      serve();
+    })
     .parse(Deno.args);
 }

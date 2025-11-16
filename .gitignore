@@ -1,3 +1,4 @@
 *.iso
 *.img
 vmconfig.toml
+.env

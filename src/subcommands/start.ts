@@ -8,11 +8,16 @@ import { getInstanceState, updateInstanceState } from "../state.ts";
 import { setupFirmwareFilesIfNeeded, setupNATNetworkArgs } from "../utils.ts";
 import { createVolume, getVolume } from "../volumes.ts";
 
-class VmNotFoundError extends Data.TaggedError("VmNotFoundError")<{
+export class VmNotFoundError extends Data.TaggedError("VmNotFoundError")<{
   name: string;
 }> {}
 
-class CommandError extends Data.TaggedError("CommandError")<{
+export class VmAlreadyRunningError
+  extends Data.TaggedError("VmAlreadyRunningError")<{
+    name: string;
+  }> {}
+
+export class CommandError extends Data.TaggedError("CommandError")<{
   cause?: unknown;
 }> {}
 
@@ -31,9 +36,9 @@ const logStarting = (vm: VirtualMachine) =>
 
 const applyFlags = (vm: VirtualMachine) => Effect.succeed(mergeFlags(vm));
 
-const setupFirmware = () => setupFirmwareFilesIfNeeded();
+export const setupFirmware = () => setupFirmwareFilesIfNeeded();
 
-const buildQemuArgs = (vm: VirtualMachine, firmwareArgs: string[]) => {
+export const buildQemuArgs = (vm: VirtualMachine, firmwareArgs: string[]) => {
   const qemu = Deno.build.arch === "aarch64"
     ? "qemu-system-aarch64"
     : "qemu-system-x86_64";
@@ -72,13 +77,23 @@ const buildQemuArgs = (vm: VirtualMachine, firmwareArgs: string[]) => {
   ]);
 };
 
-const createLogsDir = () =>
+export const createLogsDir = () =>
   Effect.tryPromise({
     try: () => Deno.mkdir(LOGS_DIR, { recursive: true }),
     catch: (error) => new CommandError({ cause: error }),
   });
 
-const startDetachedQemu = (
+export const failIfVMRunning = (vm: VirtualMachine) =>
+  Effect.gen(function* () {
+    if (vm.status === "RUNNING") {
+      return yield* Effect.fail(
+        new VmAlreadyRunningError({ name: vm.name }),
+      );
+    }
+    return vm;
+  });
+
+export const startDetachedQemu = (
   name: string,
   vm: VirtualMachine,
   qemuArgs: string[],
@@ -276,13 +291,23 @@ function mergeFlags(vm: VirtualMachine): VirtualMachine {
   const { flags } = parseFlags(Deno.args);
   return {
     ...vm,
-    memory: flags.memory ? String(flags.memory) : vm.memory,
-    cpus: flags.cpus ? Number(flags.cpus) : vm.cpus,
-    cpu: flags.cpu ? String(flags.cpu) : vm.cpu,
+    memory: (flags.memory || flags.m)
+      ? String(flags.memory || flags.m)
+      : vm.memory,
+    cpus: (flags.cpus || flags.C) ? Number(flags.cpus || flags.C) : vm.cpus,
+    cpu: (flags.cpu || flags.c) ? String(flags.cpu || flags.c) : vm.cpu,
     diskFormat: flags.diskFormat ? String(flags.diskFormat) : vm.diskFormat,
-    portForward: flags.portForward ? String(flags.portForward) : vm.portForward,
-    drivePath: flags.image ? String(flags.image) : vm.drivePath,
-    bridge: flags.bridge ? String(flags.bridge) : vm.bridge,
-    diskSize: flags.size ? String(flags.size) : vm.diskSize,
+    portForward: (flags.portForward || flags.p)
+      ? String(flags.portForward || flags.p)
+      : vm.portForward,
+    drivePath: (flags.image || flags.i)
+      ? String(flags.image || flags.i)
+      : vm.drivePath,
+    bridge: (flags.bridge || flags.b)
+      ? String(flags.bridge || flags.b)
+      : vm.bridge,
+    diskSize: (flags.size || flags.s)
+      ? String(flags.size || flags.s)
+      : vm.diskSize,
   };
 }
