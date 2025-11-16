@@ -115,8 +115,8 @@ openbsd-up pull ghcr.io/tsirysndr/openbsd:7.8
 # Push an OpenBSD image to an OCI registry
 openbsd-up push my-openbsd-image:latest
 
-# Tag an image
-openbsd-up tag ghcr.io/tsirysndr/openbsd:7.8 my-openbsd:latest
+# Tag a VM
+openbsd-up tag vm-name ghcr.io/tsirysndr/openbsd:7.8
 
 # List local images
 openbsd-up images
